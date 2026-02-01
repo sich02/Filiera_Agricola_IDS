@@ -1,0 +1,51 @@
+package org.example.controller;
+
+import jakarta.validation.Valid;
+import org.example.dto.request.LoginRequest;
+import org.example.dto.request.RegistrazioneRequest;
+import org.example.dto.response.UtenteResponse;
+import org.example.service.AuthService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/auth")
+public class  AuthController {
+
+    @Autowired
+    private AuthService authService;
+
+
+    //REGISTRAZIONE
+    @PostMapping("/registrazione")
+    public ResponseEntity<String> registrazione(@Valid @RequestBody RegistrazioneRequest request) {
+        try{
+            authService.registraUtente(request);
+            return ResponseEntity.ok("Registrazione avvenuta con successo");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Errore generico: " + e.getMessage());
+        }
+    }
+
+    //LOGIN
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        var utente = authService.login(request);
+        if (utente != null) {
+            return ResponseEntity.ok(UtenteResponse.fromEntity(utente));
+        }
+        return ResponseEntity.status(401).body("Credenziale non valide");
+    }
+
+    //LOGOUT
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestParam(required = false) Long idUtente) {
+        try{
+            authService.logout(idUtente);
+            return ResponseEntity.ok("Logout effettuato con successo");
+        }catch(Exception e){
+            return ResponseEntity.badRequest().body("Errore generico durante il logout: " + e.getMessage());
+        }
+    }
+}
