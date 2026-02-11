@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TrasformazioneService {
@@ -83,20 +84,27 @@ public class TrasformazioneService {
 
         // 2. Recupero Input e Scarico Magazzino
         List<ProdottoSingolo> inputList = new ArrayList<>();
-        for(Integer id : request.idsProdottoInput()){
-            Prodotto p = prodottoRepo.findById(Long.valueOf(id))
-                    .orElseThrow(() -> new RuntimeException("Materia prima non trovata"));
 
-            if(p instanceof ProdottoSingolo ps){
-                if (ps.getQuantitaDisponibile() < 1) {
-                    throw new RuntimeException("Materia prima esaurita: " + ps.getNome());
+        for (Map.Entry<Long, Integer> entry : request.ingredienti().entrySet()) {
+            Long idProdotto = entry.getKey();
+            Integer quantitaRichiesta = entry.getValue();
+
+            Prodotto p = prodottoRepo.findById(idProdotto)
+                    .orElseThrow(() -> new RuntimeException("Materia prima non trovata (ID: " + idProdotto + ")"));
+
+            if (p instanceof ProdottoSingolo ps) {
+                if (ps.getQuantitaDisponibile() < quantitaRichiesta) {
+                    throw new RuntimeException("Quantità insufficiente per: " + ps.getNome() +
+                            ". Richiesto: " + quantitaRichiesta +
+                            ", Disponibile: " + ps.getQuantitaDisponibile());
                 }
-                ps.setQuantitaDisponibile(ps.getQuantitaDisponibile() - 1);
+
+                ps.setQuantitaDisponibile(ps.getQuantitaDisponibile() - quantitaRichiesta);
                 prodottoRepo.save(ps);
 
                 inputList.add(ps);
             } else {
-                throw new RuntimeException("Input non valido");
+                throw new RuntimeException("L'ID " + idProdotto + " non corrisponde a una materia prima valida");
             }
         }
 

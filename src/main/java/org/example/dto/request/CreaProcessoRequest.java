@@ -1,11 +1,12 @@
 package org.example.dto.request;
 
 import java.util.List;
+import java.util.Map;
 
 public record CreaProcessoRequest(
         Long idTrasformatore,
 
-        List<Integer> idsProdottoInput,
+        Map<Long, Integer> ingredienti,
 
         String nomeOutput,
         String descrizioneOutput,
